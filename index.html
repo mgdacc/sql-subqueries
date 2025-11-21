@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Subqueries: Consultas Anidadas (Light/Dark)</title>
+    <style>
+        /* === ESTILOS GLOBALES (DARK MODE POR DEFECTO) === */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #cccccc;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .slideshow-container { position: relative; width: 90%; max-width: 960px; }
+        
+        .slide {
+            display: none;
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            height: 540px; padding: 40px 60px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            flex-direction: column; justify-content: center; position: relative;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .fade { animation-name: fade; animation-duration: 0.5s; }
+        @keyframes fade { from {opacity: .4} to {opacity: 1} }
+
+        .prev, .next {
+            cursor: pointer; position: absolute; top: 50%; transform: translateY(-50%);
+            width: 50px; height: 50px; background-color: #333; color: #f1f1f1;
+            border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; font-size: 24px; transition: all 0.3s ease;
+            user-select: none; z-index: 10;
+        }
+        .prev:hover, .next:hover { background-color: #555; }
+        .prev { left: -70px; }
+        .next { right: -70px; }
+
+        .slide h1 { font-size: 3.5em; text-align: center; border-bottom: 4px solid #3498db; padding-bottom: 20px; color: #3498db; }
+        .slide h2 { font-size: 2.8em; margin: 0 0 30px; text-align: center; color: #3498db; }
+        .single-content { text-align: center; }
+        .single-content p { font-size: 1.5em; color: #cccccc; }
+        pre { display: inline-block; background-color: #2b2b2b; color: #f1f1f1; padding: 15px; border-radius: 5px; font-size: 1.2em; white-space: pre-wrap; border: 1px solid #444; text-align: left; }
+        
+        .footer { position: absolute; bottom: 20px; right: 40px; font-size: 1em; color: #888; }
+        .subtitle { color: #e0e0e0; font-size: 2em; font-weight: bold; text-align: center; }
+        
+        /* === ESTILOS DEL SWITCH DE TEMA === */
+        .theme-switch-wrapper {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+        }
+        #theme-switch {
+            cursor: pointer; padding: 8px 12px; border-radius: 20px;
+            border: 1px solid #555; background-color: #333; color: #f1f1f1;
+            font-size: 0.9em; transition: all 0.3s ease;
+        }
+        #theme-switch:hover { background-color: #555; }
+
+        /* === ESTILOS DEL LIGHT MODE === */
+        body.light-mode { background-color: #f0f0f0; color: #333; }
+        body.light-mode .slide { background-color: #fff; border-color: #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        body.light-mode .slide h1 { color: #005A9C; border-color: #3498db; }
+        body.light-mode .slide h2 { color: #005A9C; }
+        body.light-mode .subtitle { color: #333; }
+        body.light-mode .single-content p { color: #444; }
+        body.light-mode pre { background-color: #2d3636; color: #fff; border-color: transparent; }
+        body.light-mode .prev, body.light-mode .next { background-color: #cccccc; color: #333; }
+        body.light-mode .prev:hover, body.light-mode .next:hover { background-color: #aaaaaa; }
+        body.light-mode #theme-switch { background-color: #fff; color: #333; border-color: #ccc; }
+        body.light-mode #theme-switch:hover { background-color: #eee; }
+
+        /* === MEDIA QUERIES === */
+        @media screen and (max-width: 768px) {
+            body { padding: 15px; }
+            .slideshow-container { width: 100%; padding-bottom: 75px; }
+            .slide { height: auto; min-height: 75vh; padding: 20px 25px; }
+            .prev, .next { top: auto; bottom: 15px; width: 45px; height: 45px; }
+            .prev { left: 50%; transform: translateX(-110%); }
+            .next { left: 50%; transform: translateX(10%); right: auto; }
+            .slide h1 { font-size: 2.2em; }
+            .slide h2 { font-size: 1.8em; }
+            .subtitle { font-size: 1.5em; }
+            .single-content p { font-size: 1.1em; }
+            .single-content pre { font-size: 1em; }
+            .footer { font-size: 0.8em; right: 25px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="theme-switch-wrapper">
+        <button id="theme-switch">Light Mode</button>
+    </div>
+
+    <div class="slideshow-container">
+        
+        <!-- =============================================================== -->
+        <!-- INICIO DEL CONTENIDO DE LAS DIAPOSITIVAS -->
+        <!-- =============================================================== -->
+
+        <div class="slide fade">
+            <h1>Cheat Sheet de SQL</h1>
+            <div class="subtitle">Subqueries</div>
+            <div class="footer">1 / 12</div>
+        </div>
+
+        <div class="slide fade">
+            <h2>¿Qué es una Subquery?</h2>
+            <div class="single-content">
+                <p>Una subquery (o subconsulta) es una sentencia `SELECT` que se encuentra anidada dentro de otra sentencia SQL principal.</p>
+                <p style="font-size: 1.2em;">Es como hacer una pregunta para obtener un dato que necesitas para poder hacer tu pregunta final.</p>
+            </div>
+            <div class="footer">2 / 12</div>
+        </div>
+        
+        <div class="slide fade">
+            <h2>Subqueries en la Cláusula `WHERE`</h2>
+            <div class="single-content">
+                <p>Es el uso más común. Permite filtrar los datos de la consulta principal basándose en el resultado de la subconsulta.</p>
+                <pre><code>-- Dame los empleados que ganan MÁS que el salario promedio.
+SELECT Nombre, Salario
+FROM Empleados
+WHERE Salario > (SELECT AVG(Salario) FROM Empleados);</code></pre>
+            </div>
+            <div class="footer">3 / 12</div>
+        </div>
+
+        <div class="slide fade">
+            <h2>`WHERE` con Operadores `IN` y `NOT IN`</h2>
+            <div class="single-content">
+                <p>La subconsulta puede devolver una lista de valores que se usan para filtrar.</p>
+                <pre><code>-- Muéstrame los clientes que SÍ han realizado un pedido.
+SELECT Nombre
+FROM Clientes
+WHERE ClienteID IN (SELECT ClienteID FROM Pedidos);</code></pre>
+            </div>
+            <div class="footer">4 / 12</div>
+        </div>
+
+        <div class="slide fade">
+            <h2>Subconsultas Correlacionadas</h2>
+            <div class="single-content">
+                <p>Una subconsulta correlacionada es aquella que depende de la consulta externa para cada fila que procesa. Es como un bucle.</p>
+                <pre><code style="font-size: 0.9em;">-- Para CADA cliente de la consulta externa,
+-- la interna busca si tiene pedidos.
+SELECT Nombre FROM Clientes C
+WHERE EXISTS (
+  SELECT 1 FROM Pedidos P WHERE P.ClienteID = C.ClienteID
+);</code></pre>
+            </div>
+            <div class="footer">5 / 12</div>
+        </div>
+        
+        <div class="slide fade">
+            <h2>`EXISTS`: ¿Existe o no?</h2>
+            <div class="single-content">
+                <p>`EXISTS` es un operador que devuelve `TRUE` si la subconsulta produce al menos una fila, y `FALSE` si no. Es muy eficiente para comprobaciones de existencia.</p>
+                 <p style="font-size: 1.1em; margin-top: 15px;">A menudo es más rápido que `IN` en grandes volúmenes de datos.</p>
+            </div>
+            <div class="footer">6 / 12</div>
+        </div>
+        
+        <div class="slide fade">
+            <h2>Subqueries en la Cláusula `SELECT`</h2>
+            <div class="single-content">
+                <p>Se usan para añadir una columna calculada a cada fila del resultado. La subconsulta debe devolver un único valor (una fila, una columna).</p>
+                <pre><code style="font-size: 0.8em;">-- Para cada cliente, calcula su número total de pedidos.
+SELECT
+  Nombre,
+  (SELECT COUNT(*) FROM Pedidos P 
+   WHERE P.ClienteID = C.ClienteID) AS TotalPedidos
+FROM Clientes AS C;</code></pre>
+            </div>
+            <div class="footer">7 / 12</div>
+        </div>
+
+        <div class="slide fade">
+            <h2>Subqueries en la Cláusula `FROM`</h2>
+            <div class="single-content">
+                <p>Permite tratar el resultado de una consulta como si fuera una tabla temporal. A esto se le llama "Tabla Derivada".</p>
+                <pre><code style="font-size: 0.9em;">-- Calcula el promedio de las ventas totales por categoría.
+SELECT AVG(TotalVentas) AS PromedioDeVentas
+FROM (
+  SELECT Categoria, SUM(Monto) AS TotalVentas
+  FROM Pedidos
+  GROUP BY Categoria
+) AS VentasPorCategoria; -- ¡El alias es obligatorio!</code></pre>
+            </div>
+            <div class="footer">8 / 12</div>
+        </div>
+        
+        <div class="slide fade">
+            <h2>El Problema de la Legibilidad</h2>
+            <div class="single-content">
+                <p>Las subconsultas anidadas pueden volverse muy difíciles de leer, depurar y mantener.</p>
+                <pre><code>SELECT * FROM A WHERE A.id IN
+(SELECT B.id FROM B WHERE B.id IN
+(SELECT C.id FROM C WHERE ...))</code></pre>
+                 <p style="font-size: 1.1em; margin-top: 15px;">¿Existe una forma mejor?</p>
+            </div>
+            <div class="footer">9 / 12</div>
+        </div>
+
+        <div class="slide fade">
+            <h2>CTEs: La Alternativa Moderna</h2>
+            <div class="single-content">
+                <p>Las `Common Table Expressions` (CTEs), usando la cláusula `WITH`, permiten nombrar una subconsulta para usarla después. Mejoran enormemente la legibilidad.</p>
+                <pre><code style="font-size: 0.9em;">WITH VentasPorCategoria AS (
+  SELECT Categoria, SUM(Monto) AS TotalVentas
+  FROM Pedidos
+  GROUP BY Categoria
+)
+SELECT AVG(TotalVentas)
+FROM VentasPorCategoria;</code></pre>
+            </div>
+            <div class="footer">10 / 12</div>
+        </div>
+        
+        <div class="slide fade">
+            <h2>Resumen de Subqueries</h2>
+            <div class="single-content">
+                 <p style="font-size: 1.2em; text-align: left; display: inline-block;">
+                    <b>En `WHERE`</b>: Para filtrar datos dinámicamente.<br><br>
+                    <b>En `SELECT`</b>: Para crear columnas calculadas.<br><br>
+                    <b>En `FROM`</b>: Para usar un resultado como tabla temporal.<br><br>
+                    <b>`CTEs (WITH)`</b>: La forma moderna y legible de organizar subconsultas complejas.
+                </p>
+            </div>
+            <div class="footer">11 / 12</div>
+        </div>
+
+        <div class="slide fade">
+            <h1>¡Dominado!</h1>
+            <div class="subtitle">Ahora puedes escribir consultas más inteligentes y potentes anidando tus lógicas.</div>
+            <div class="footer">12 / 12</div>
+        </div>
+        
+        <!-- =============================================================== -->
+        <!-- FIN DEL CONTENIDO DE LAS DIAPOSITIVAS -->
+        <!-- =============================================================== -->
+
+        <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
+        <a class="next" onclick="plusSlides(1)">&#10095;</a>
+    </div>
+
+    <!-- Lógica de JavaScript -->
+    <script>
+        // --- Lógica de la presentación ---
+        let slideIndex = 1;
+        showSlides(slideIndex);
+
+        function plusSlides(n) {
+            showSlides(slideIndex += n);
+        }
+
+        function showSlides(n) {
+            let i;
+            let slides = document.getElementsByClassName("slide");
+            if (n > slides.length) { slideIndex = 1 } 
+            if (n < 1) { slideIndex = slides.length }
+            
+            for (i = 0; i < slides.length; i++) {
+                slides[i].style.display = "none";
+            }
+            
+            slides[slideIndex - 1].style.display = "flex";
+        }
+
+        // --- Lógica del cambio de tema (Light/Dark Mode) ---
+        const themeSwitch = document.getElementById('theme-switch');
+        const body = document.body;
+
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                body.classList.add('light-mode');
+                themeSwitch.textContent = 'Dark Mode';
+            } else {
+                body.classList.remove('light-mode');
+                themeSwitch.textContent = 'Light Mode';
+            }
+        }
+
+        themeSwitch.addEventListener('click', () => {
+            let currentTheme = body.classList.contains('light-mode') ? 'light' : 'dark';
+            let newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            applyTheme(newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
+        });
+    </script>
+
+</body>
+</html>
